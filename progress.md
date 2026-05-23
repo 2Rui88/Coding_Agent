@@ -7,21 +7,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 
 ---
 
-## 已完成
 
-### 项目理解与架构分析
-
-- [x] 全部 30+ 个源文件阅读与分析
-- [x] 五阶段分析报告输出
-
-| 文档 | 内容 |
-|------|------|
-| [phase-1-architecture-overview.md](phase-1-architecture-overview.md) | 项目类型、技术栈、目录结构、启动链路 |
-| [phase-2-core-business-flow.md](phase-2-core-business-flow.md) | 请求流、工具调用链、压缩决策树、MCP 架构、权限系统 |
-| [phase-3-code-quality.md](phase-3-code-quality.md) | 15 个问题（高/中/低优先级） |
-| [phase-4-modification-guide.md](phase-4-modification-guide.md) | 核心风险点、推荐开发切入点 |
-| [phase-5-python-migration-analysis.md](phase-5-python-migration-analysis.md) | 迁移可行性、代码量预估、技术栈映射 |
-| [phase-6-python-architecture-design.md](phase-6-python-architecture-design.md) | Python 版架构分层、功能模块、设计亮点 |
 
 ### Python 迁移 — M1 基础设施
 
