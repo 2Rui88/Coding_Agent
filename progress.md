@@ -1,10 +1,9 @@
-# mini-code 项目进度
+# Coding_Agent 项目进度
 
 ## 概述
 
-mini-code 是一个 AI 终端编程助手（类 Claude Code），支持多模型适配、上下文压缩、MCP 扩展、权限沙箱与终端全屏交互。
+Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文压缩、MCP 扩展、权限沙箱与终端全屏交互。
 
-当前状态：**TypeScript 原型已完成，正在迁移至 Python。**
 
 ---
 
