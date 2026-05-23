@@ -14,11 +14,11 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] 项目脚手架：目录结构、`pyproject.toml`
 - [x] `infra/types.py` — Pydantic 消息模型（discriminated union）
 - [x] `infra/errors.py` — 异常层级
-- [ ] `infra/tokens/counter.py` — Token 精确计数
+- [x] `infra/tokens/counter.py` — Token 精确计数 (tiktoken)
 - [ ] `infra/storage/large_results.py` — 大工具结果持久化
-- [ ] `config/settings.py` — pydantic-settings 配置加载
-- [ ] `tools/definition.py` — ToolDefinition + ToolRegistry
-- [ ] `model/anthropic.py` — Anthropic SDK 适配器
+- [x] `config/settings.py` — pydantic-settings 配置加载
+- [x] `tools/definition.py` — ToolDefinition + ToolRegistry
+- [x] `model/anthropic.py` — Anthropic SDK 适配器
 - [ ] 12 个内置工具
 - [ ] `agent/loop.py` — Agent Loop (async generator)
 - [ ] `main.py` — CLI 入口
