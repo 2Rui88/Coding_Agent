@@ -79,3 +79,10 @@ class ThinkingRecovery(AgentEvent):
     type: str = "thinking_recovery"
     stop_reason: str = ""
     attempt: int = 0
+
+
+@dataclass
+class CompactionEvent(AgentEvent):
+    type: str = "compaction"
+    kind: str = ""  # "snip" | "micro" | "collapse" | "auto"
+    data: dict = field(default_factory=dict)

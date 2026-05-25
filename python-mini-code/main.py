@@ -15,6 +15,7 @@ import sys
 
 from agent.loop import run_agent_turn
 from config.settings import RuntimeConfig
+from context.pipeline import create_default_pipeline
 from infra.types import MessageList
 from model.anthropic import AnthropicAdapter
 from tools.builtin import (
@@ -133,6 +134,8 @@ async def _run_pipe_mode(cwd: str, config: RuntimeConfig) -> None:
         messages.append({"role": "user", "content": raw})
 
     # Agent Loop
+    pipeline = create_default_pipeline()
+
     async for event in run_agent_turn(
         model=model,
         tools=tools,
@@ -140,6 +143,7 @@ async def _run_pipe_mode(cwd: str, config: RuntimeConfig) -> None:
         cwd=cwd,
         max_steps=25,
         model_name=config.model,
+        pipeline=pipeline,
     ):
         match event.type:
             case "model_request":

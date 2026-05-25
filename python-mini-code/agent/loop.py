@@ -77,8 +77,19 @@ async def run_agent_turn(
     permissions=None,
     max_steps: int = 25,
     model_name: str = "",
+    pipeline=None,  # CompactionPipeline | None
 ) -> AsyncGenerator[AgentEvent, None]:
     """执行一次 Agent Turn（用户输入到下一个回复）。
+
+    Args:
+        model: 模型适配器
+        tools: 工具注册中心
+        messages: 初始消息列表
+        cwd: 当前工作目录
+        permissions: 可选的权限管理器
+        max_steps: 最大工具调用步数
+        model_name: 模型名称（用于 token 计数）
+        pipeline: 可选的压缩 Pipeline（M2 集成）
 
     Yields:
         AgentEvent — UI 层消费事件流
@@ -88,14 +99,43 @@ async def run_agent_turn(
     thinking_retry = 0
     tool_error_count = 0
     saw_tool_result = False
+    snipped_this_turn = False  # SnipCompact 每回合只执行一次
 
     for step in range(max_steps):
         yield TurnStart(step=step)
 
-        # 上下文统计（M2 会接入压缩 Pipeline）
-        if model_name:
-            stats = compute_context_stats(msgs, model_name)
-            # 压缩钩子会在此处注入（M2）
+        # ---- 上下文压缩 Pipeline ----
+        if model_name and pipeline is not None:
+            # 注意：流水线为多模态过程，操作不同策略对象。
+            # 默认的 auto_compatible 模式仅在 step=0 时执行。
+            # 按策略拆分为：snip / micro / collapse (每步) + auto (仅 step=0)
+            for strategy in pipeline.strategies:
+                try:
+                    stats = compute_context_stats(msgs, model_name)
+                    if not strategy.should_apply(stats["utilization"]):
+                        continue
+
+                    # SnipCompact: 每回合只执行一次
+                    if strategy.name == "snip" and snipped_this_turn:
+                        continue
+
+                    # AutoCompact: 仅首步
+                    if strategy.name == "auto" and step > 0:
+                        continue
+
+                    result = await strategy.apply(msgs, model_name, model)
+                    if result.did_compact:
+                        msgs = result.messages
+                        if strategy.name == "snip":
+                            snipped_this_turn = True
+                        yield CompactionEvent(kind=strategy.name, data={
+                            "tokens_before": result.tokens_before,
+                            "tokens_after": result.tokens_after,
+                            "tokens_freed": result.tokens_freed,
+                            "metadata": result.metadata,
+                        })
+                except Exception:
+                    continue
 
         # 调用模型
         yield ModelRequest()
