@@ -10,3 +10,4 @@ build/
 .pytest_cache/
 .ruff_cache/
 M1-ARCHITECTURE.md
+M2-ARCHITECTURE.md
