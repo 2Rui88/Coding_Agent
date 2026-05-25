@@ -9,7 +9,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 
 
 
-### Python 迁移 — M1 基础设施
+### Python 迁移 — M1 基础设施 ✅
 
 - [x] 项目脚手架：目录结构、`pyproject.toml`
 - [x] `infra/types.py` — Pydantic 消息模型（discriminated union）
@@ -24,15 +24,24 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] `main.py` — CLI 入口
 - [x] 管道模式最小可用闭环验证
 
+### Python 迁移 — M2 上下文压缩 Pipeline ✅
+
+- [x] `context/strategy.py` — 统一 CompactionStrategy 接口
+- [x] `context/constants.py` — 阈值与限制常量
+- [x] `context/groups.py` — 公共消息分组逻辑（消除重复）
+- [x] `context/snip.py` — SnipCompact 策略
+- [x] `context/micro.py` — Microcompact 策略
+- [x] `context/collapse.py` — ContextCollapse 策略（投影视图）
+- [x] `context/auto.py` — AutoCompact 策略
+- [x] `context/pipeline.py` — Pipeline 编排器
+- [x] Agent Loop 集成 Pipeline
+
 ---
 
 ## 待完成
 
-### Python 迁移 — M2~M5
+### Python 迁移 — M3~M5
 
-- [ ] `context/pipeline.py` — 四层压缩 Pipeline
-- [ ] `context/snip.py` — SnipCompact
-- [ ] `context/collapse.py` — ContextCollapse
 - [ ] `perm/` — 权限决策链引擎
 - [ ] `session/` — JSONL 会话持久化
 - [ ] `mcp/` — 双传输 MCP 客户端
@@ -94,12 +103,12 @@ Python 迁移中规划的优化（区别于原型中的问题）：
 
 ```
 M1: 基础设施 + Agent Loop ──── 已完成 ✅
-M2: 上下文压缩 Pipeline ───── 待开始
-M3: MCP + Skill + 权限 ────── 待开始
+M2: 上下文压缩 Pipeline ───── 已完成 ✅
+M3: MCP + Skill + 权限 ────── 下一步
 M4: 终端 UI ───────────────── 待开始
 M5: 会话持久化 ────────────── 待开始
 ```
 
 ---
 
-*最后更新: 2026-05-24*
+*最后更新: 2026-05-25*
