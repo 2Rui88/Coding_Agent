@@ -36,16 +36,29 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] `context/pipeline.py` — Pipeline 编排器
 - [x] Agent Loop 集成 Pipeline
 
+### Python 迁移 — M3 MCP + Skill + 权限 ✅
+
+- [x] `skills/discover.py` — 多源分层 Skill 发现 + 同名去重
+- [x] `skills/installer.py` — Skill 安装/卸载管理
+- [x] `perm/manager.py` — PermissionManager 公共 API
+- [x] `perm/chain.py` — 决策链编排
+- [x] `perm/classifier.py` — 11 类危险命令识别
+- [x] `perm/store.py` — 权限 JSON 持久化
+- [x] `perm/handlers/` — 5 个独立决策处理器
+- [x] `mcp/client.py` — McpClient 抽象接口
+- [x] `mcp/stdio.py` — Stdio 帧协议客户端 + 协议协商
+- [x] `mcp/http_client.py` — Streamable HTTP 客户端
+- [x] `mcp/proxy.py` — 工具代理 + resources/prompts
+- [x] `mcp/auth.py` — Bearer Token 管理
+- [x] `main.py` 集成 M3 全部模块
+
 ---
 
 ## 待完成
 
-### Python 迁移 — M3~M5
+### Python 迁移 — M4~M5
 
-- [ ] `perm/` — 权限决策链引擎
 - [ ] `session/` — JSONL 会话持久化
-- [ ] `mcp/` — 双传输 MCP 客户端
-- [ ] `skills/` — Skill 发现与加载
 - [ ] `ui/tty/` — 终端全屏交互
 - [ ] `ui/pipe/` — 管道模式
 - [ ] `commands/` — 斜杠命令插件系统
@@ -104,7 +117,7 @@ Python 迁移中规划的优化（区别于原型中的问题）：
 ```
 M1: 基础设施 + Agent Loop ──── 已完成 ✅
 M2: 上下文压缩 Pipeline ───── 已完成 ✅
-M3: MCP + Skill + 权限 ────── 下一步
+M3: MCP + Skill + 权限 ────── 已完成 ✅
 M4: 终端 UI ───────────────── 待开始
 M5: 会话持久化 ────────────── 待开始
 ```
