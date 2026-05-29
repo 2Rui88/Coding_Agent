@@ -1,4 +1,4 @@
-# Python 版 mini-code 架构设计
+# Python 版 Coding_Agent 架构设计
 
 ## 一、整体架构分层
 
@@ -169,10 +169,6 @@ agent/
 ```
 
 **核心设计 — Async Generator Agent Loop**:
-
-这是 Python 版最重要的架构改进。当前 TypeScript 版的 `runAgentTurn` 是一个巨大的 async 函数，通过 6 个 `on*` 回调与 UI 通信。
-
-Python 版改为 async generator，每个步骤 yield 一个事件：
 
 ```python
 async def agent_turn(
@@ -823,8 +819,6 @@ class CompactionError(MiniCodeError):
 
 ### 亮点 1：Async Generator Agent Loop — 流式事件总线
 
-**问题**: TypeScript 版通过 6 个 `on*` 回调函数将 Agent 内部状态传递给 UI，回调嵌套深、难以测试、难以扩展。
-
 **方案**: Agent Loop 改为 async generator，每个关键步骤 `yield` 一个类型化事件。UI 层通过 `async for` 消费事件流。
 
 ```python
@@ -858,8 +852,6 @@ async for event in agent_turn(messages, model, tools, permissions):
 
 ### 亮点 2：统一压缩策略 Pipeline
 
-**问题**: TypeScript 版 5 种压缩策略各有独立的函数签名和返回值类型，调用逻辑分散在 `agent-loop.ts` 中。
-
 **方案**: 抽象 `CompactionStrategy` 基类，Pipeline 按优先级链式执行。
 
 ```python
@@ -881,8 +873,6 @@ messages = await pipeline.apply(messages, model)
 - 策略顺序可配置（如禁用 snipCompact）
 
 ### 亮点 3：Pydantic 消息模型 — 类型安全的数据管道
-
-**问题**: TypeScript 版类型定义在 `types.ts`，运行时校验靠 Zod（工具输入）和手动检查（消息角色）。
 
 **方案**: 所有消息类型用 Pydantic discriminated union 建模，序列化/反序列化/校验自动完成。
 
@@ -911,8 +901,6 @@ def to_anthropic_format(msg: ChatMessage) -> dict:
 
 ### 亮点 4：决策链权限系统
 
-**问题**: TypeScript 版每个 `ensure*` 方法包含一大段 if-else 分支，逻辑相似但各自实现。
-
 **方案**: 权限检查抽象为处理器责任链，每个处理器负责一个决策维度。
 
 ```python
@@ -932,8 +920,6 @@ path_chain = PermissionChain([
 - 新增权限维度（如时间窗口限制）只需添加一个处理器
 
 ### 亮点 5：交互层抽象 — 模式无关的 UI 协议
-
-**问题**: TypeScript 版 `tty-app.ts` 和 `index.ts` 中的管道模式是完全独立的代码路径。
 
 **方案**: 定义 `UserInterface` 协议，TTY 和管道模式各自实现。
 
@@ -960,8 +946,6 @@ async def main():
 ```
 
 ### 亮点 6：斜杠命令插件系统
-
-**问题**: TypeScript 版 `tryHandleLocalCommand()` 是一个 18 分支的 if-else 链。
 
 **方案**: 装饰器注册 + 自动发现。
 
@@ -1017,8 +1001,6 @@ async def main():
 
 ### 亮点 8：tenacity 统一重试策略
 
-**问题**: TypeScript 版重试逻辑分散在 5 个地方，各有不同的重试参数。
-
 **方案**: `tenacity` 装饰器统一所有重试。
 
 ```python
@@ -1063,8 +1045,6 @@ logger.warning("compaction_skipped", reason="below_threshold", utilization=conte
 ```
 
 ### 亮点 10：精确 Token 计数
-
-**问题**: TypeScript 版用字符数/硬编码比率估算，对非英文文本误差大。
 
 **方案**:
 - 已知消息：使用 Anthropic API 返回的精确 `usage.input_tokens`
