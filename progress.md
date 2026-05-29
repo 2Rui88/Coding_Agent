@@ -9,7 +9,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 
 
 
-### Python 迁移 — M1 基础设施 ✅
+### M1 基础设施 ✅
 
 - [x] 项目脚手架：目录结构、`pyproject.toml`
 - [x] `infra/types.py` — Pydantic 消息模型（discriminated union）
@@ -24,7 +24,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] `main.py` — CLI 入口
 - [x] 管道模式最小可用闭环验证
 
-### Python 迁移 — M2 上下文压缩 Pipeline ✅
+### M2 上下文压缩 Pipeline ✅
 
 - [x] `context/strategy.py` — 统一 CompactionStrategy 接口
 - [x] `context/constants.py` — 阈值与限制常量
@@ -36,7 +36,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] `context/pipeline.py` — Pipeline 编排器
 - [x] Agent Loop 集成 Pipeline
 
-### Python 迁移 — M3 MCP + Skill + 权限 ✅
+### M3 MCP + Skill + 权限 ✅
 
 - [x] `skills/discover.py` — 多源分层 Skill 发现 + 同名去重
 - [x] `skills/installer.py` — Skill 安装/卸载管理
@@ -52,7 +52,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] `mcp/auth.py` — Bearer Token 管理
 - [x] `main.py` 集成 M3 全部模块
 
-### Python 迁移 — M4 终端 UI ✅
+### M4 终端 UI ✅
 
 - [x] `ui/protocol.py` — UserInterface 抽象协议
 - [x] `ui/pipe/app.py` — 管道模式（PipeUI）
@@ -68,7 +68,7 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 
 ## 待完成
 
-### Python 迁移 — M5
+### M5
 
 - [ ] `session/` — JSONL 会话持久化
 - [ ] 测试覆盖
@@ -95,8 +95,6 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 ---
 
 ## 架构优化待办
-
-Python 迁移中规划的优化（区别于原型中的问题）：
 
 | # | 描述 | 对应文档 |
 |---|------|---------|
