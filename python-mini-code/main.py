@@ -1,6 +1,6 @@
 """mini-code — AI 终端编程助手。
 
-入口文件，负责参数解析、组件初始化、模式分发。
+入口文件，负责组件初始化、模式分发。
 """
 
 from __future__ import annotations
@@ -10,6 +10,11 @@ import os
 import sys
 
 from agent.loop import run_agent_turn
+from commands.registry import CommandContext, registry
+
+# 导入内置命令（触发装饰器注册）
+import commands.builtin.basic  # noqa: F401
+
 from config.settings import RuntimeConfig
 from context.pipeline import create_default_pipeline
 from infra.types import MessageList
@@ -31,83 +36,33 @@ from tools.builtin import (
     write_file_tool,
 )
 from tools.definition import ToolRegistry
+from ui.pipe.app import PipeUI
 
+
+# ---- 工厂函数 ----
 
 async def _make_registry(cwd: str, config: RuntimeConfig) -> ToolRegistry:
-    """创建工具注册中心（含内置工具 + MCP 工具 + Skill 元数据）。"""
-    registry = ToolRegistry([
-        ask_user_tool,
-        list_files_tool,
-        grep_files_tool,
-        read_file_tool,
-        write_file_tool,
-        modify_file_tool,
-        edit_file_tool,
-        patch_file_tool,
-        run_command_tool,
-        web_fetch_tool,
-        web_search_tool,
+    """创建工具注册中心。"""
+    registry_obj = ToolRegistry([
+        ask_user_tool, list_files_tool, grep_files_tool,
+        read_file_tool, write_file_tool, modify_file_tool,
+        edit_file_tool, patch_file_tool, run_command_tool,
+        web_fetch_tool, web_search_tool,
     ])
 
-    # 发现 Skills
     skills = await discover_skills(cwd)
-    registry.skills = [
+    registry_obj.skills = [
         {"name": s.name, "description": s.description, "source": s.source}
         for s in skills
     ]
 
-    # 连接 MCP 服务器
     if config.mcp_servers:
         mcp_result = await create_mcp_backed_tools(cwd, config.mcp_servers)
-        registry.add_tools(mcp_result["tools"])
-        registry.mcp_servers = mcp_result["servers"]
-        registry.add_disposer(mcp_result["dispose"])
+        registry_obj.add_tools(mcp_result["tools"])
+        registry_obj.mcp_servers = mcp_result["servers"]
+        registry_obj.add_disposer(mcp_result["dispose"])
 
-    return registry
-
-
-def _list_tools(registry: ToolRegistry) -> str:
-    lines = []
-    for tool in registry.list():
-        lines.append(f"  {tool.name}: {tool.description}")
-    return "\n".join(lines)
-
-
-async def _handle_slash(
-    line: str, config: RuntimeConfig, tools: ToolRegistry,
-) -> str | None:
-    cmd = line.strip()
-    if cmd == "/exit":
-        print("Bye.")
-        sys.exit(0)
-    if cmd == "/help":
-        return "Commands: /help /tools /status /model /skills /mcp /exit"
-    if cmd == "/tools":
-        return _list_tools(tools)
-    if cmd == "/status":
-        return f"model: {config.model}\nbase_url: {config.base_url}"
-    if cmd == "/skills":
-        skills = tools.skills
-        if not skills:
-            return "No skills discovered."
-        return "\n".join(
-            f"  {s['name']}: {s['description']} [{s.get('source', '?')}]"
-            for s in skills
-        )
-    if cmd == "/mcp":
-        servers = tools.mcp_servers
-        if not servers:
-            return "No MCP servers configured."
-        return "\n".join(
-            f"  {s['name']}: status={s['status']} tools={s.get('tool_count', 0)}"
-            + (f" error={s.get('error', '')}" if s.get("error") else "")
-            for s in servers
-        )
-    if cmd.startswith("/model "):
-        return f"Model override: {cmd[7:].strip()} (restart to apply)"
-    if cmd == "/model":
-        return f"Current model: {config.model}"
-    return None
+    return registry_obj
 
 
 def _build_system_prompt(
@@ -115,131 +70,150 @@ def _build_system_prompt(
 ) -> str:
     parts = [
         "You are mini-code, a terminal coding assistant.",
-        "Default behavior: inspect the repository, use tools, make code changes when appropriate, and explain results clearly.",
-        "Prefer reading files, searching code, editing files, and running verification commands over giving purely theoretical advice.",
         f"Current cwd: {cwd}",
-        "When making code changes, keep them minimal, practical, and working-oriented.",
         "If you need user clarification, call the ask_user tool.",
-        "Structured response protocol:",
-        "- When still working, start with <progress>.",
-        "- Only when the task is complete, start with <final>.",
+        "Structured protocol: <progress> when working, <final> when complete.",
     ]
-
-    # Skills 摘要
     skills = tools.skills
     if skills:
         parts.append(
             "Available skills:\n"
             + "\n".join(f"- {s['name']}: {s['description']}" for s in skills)
         )
-    else:
-        parts.append("Available skills: none discovered")
-
-    # MCP 服务器状态
     servers = tools.mcp_servers
     if servers:
         parts.append(
             "Connected MCP servers:\n"
             + "\n".join(
-                f"- {s['name']}: {s['status']}, "
-                f"tools={s.get('tool_count', 0)}"
-                + (f", error={s['error']}" if s.get("error") else "")
+                f"- {s['name']}: {s['status']}, tools={s.get('tool_count', 0)}"
                 for s in servers
             )
         )
-
-    # 权限摘要
-    if permissions:
-        parts.append(
-            f"Permission context: cwd={cwd}"
-        )
-
     return "\n\n".join(parts)
 
 
-async def _run_pipe_mode(cwd: str, config: RuntimeConfig) -> None:
-    permissions = PermissionManager(cwd, prompt=None)
-    tools = await _make_registry(cwd, config)
-    model = AnthropicAdapter(tools, config)
+# ---- 管道模式 ----
 
-    print(f"mini-code 0.2.0 | model: {config.model} | cwd: {cwd}")
-    print(f"tools: {len(tools.list())} | skills: {len(tools.skills)} | mcp: {len(tools.mcp_servers)}\n")
+async def _run_pipe_mode(cwd: str, config: RuntimeConfig) -> None:
+    """管道模式：利用 PipeUI 处理单轮输入输出。"""
+    tools = await _make_registry(cwd, config)
+    permissions = PermissionManager(cwd, prompt=None)
+    model = AnthropicAdapter(tools, config)
+    ui = PipeUI()
+
+    await ui.display_banner({
+        "model": config.model, "cwd": cwd,
+        "tools_count": len(tools.list()),
+        "skills_count": len(tools.skills),
+        "mcp_count": len(tools.mcp_servers),
+    })
 
     messages: MessageList = [
         {"role": "system", "content": _build_system_prompt(cwd, tools, permissions)},
     ]
 
-    # 从 stdin 读取用户输入
-    if not sys.stdin.isatty():
-        raw = sys.stdin.read().strip()
-        if raw:
-            messages.append({"role": "user", "content": raw})
-    else:
-        print("Enter a message (or /exit to quit):")
-        try:
-            raw = input("> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nBye.")
+    # 读取输入
+    user_input = await ui.read_input()
+    if not user_input:
+        return
+
+    # 斜杠命令
+    if user_input.startswith("/"):
+        ctx = CommandContext(
+            cwd=cwd, config=config, tools=tools, permissions=permissions,
+        )
+        parts = user_input.split(maxsplit=1)
+        cmd_name = parts[0]
+        args = parts[1] if len(parts) > 1 else ""
+        cmd = registry.get(cmd_name)
+        if cmd is not None:
+            try:
+                result = await cmd.handler(args, ctx)
+                print(result)
+            except SystemExit:
+                pass
             return
+        print(f"Unknown: {cmd_name}")
+        return
 
-        if not raw:
-            print("Empty input.")
-            return
-
-        slash_resp = await _handle_slash(raw, config, tools)
-        if slash_resp is not None:
-            print(slash_resp)
-            return
-
-        messages.append({"role": "user", "content": raw})
-
+    messages.append({"role": "user", "content": user_input})
     permissions.begin_turn()
 
     pipeline = create_default_pipeline()
-
     async for event in run_agent_turn(
-        model=model,
-        tools=tools,
-        messages=messages,
-        cwd=cwd,
-        permissions=permissions,
-        max_steps=25,
-        model_name=config.model,
-        pipeline=pipeline,
+        model=model, tools=tools, messages=messages, cwd=cwd,
+        permissions=permissions, max_steps=25,
+        model_name=config.model, pipeline=pipeline,
     ):
         match event.type:
-            case "model_request":
-                print(end="", flush=True)
             case "model_response":
-                if event.kind == "progress":
-                    print(f"\n[progress] {event.content}")
-                else:
-                    print(f"\n{event.content}")
+                await ui.display_assistant(
+                    event.content, kind=getattr(event, "kind", "final"),
+                )
             case "tool_calls":
                 for c in event.calls:
-                    print(f"\n[tool] {c['tool_name']}: {c['input']}")
+                    await ui.display_tool_call(
+                        c.get("tool_name", "?"), c.get("input", {}),
+                    )
             case "tool_result":
-                prefix = "[error]" if event.is_error else "[result]"
-                print(f"{prefix} {event.tool_name}: {event.output[:300]}...")
+                await ui.display_tool_result(
+                    event.tool_name, event.output, event.is_error,
+                )
             case "compaction":
-                print(f"\n[compaction] {event.kind}: freed ~{event.data.get('tokens_freed', 0)} tokens")
+                await ui.display_compaction(
+                    event.kind, event.data.get("tokens_freed", 0),
+                )
+            case "empty_response_retry":
+                await ui.display_retry("empty_response", event.attempt)
+            case "thinking_recovery":
+                await ui.display_retry(event.stop_reason, event.attempt)
             case "turn_complete":
                 pass
             case "max_steps":
                 print("\n[Max steps reached]")
-            case "empty_response_retry":
-                print(f"\n[Retry #{event.attempt}: empty response]")
-            case "thinking_recovery":
-                print(f"\n[Recovery #{event.attempt}: {event.stop_reason}]")
 
     permissions.end_turn()
     await tools.dispose()
 
 
+# ---- TTY 模式 ----
+
+async def _run_tty_mode(cwd: str, config: RuntimeConfig) -> None:
+    """TTY 模式：全屏终端交互。"""
+    from ui.tty.app import TtyUI
+
+    tools = await _make_registry(cwd, config)
+    permissions = PermissionManager(cwd, prompt=None)
+    model = AnthropicAdapter(tools, config)
+
+    # 将 prompt 回调绑定到 TtyUI
+    ui = TtyUI(
+        model=model, tools=tools, config=config,
+        permissions=permissions, cwd=cwd,
+    )
+    permissions.prompt = ui.prompt_permission
+
+    messages: MessageList = [
+        {"role": "system", "content": _build_system_prompt(cwd, tools, permissions)},
+    ]
+
+    try:
+        await ui.run(messages, max_steps=25)
+    finally:
+        await tools.dispose()
+        await ui.on_shutdown()
+
+
+# ---- 入口 ----
+
 async def main() -> None:
     cwd = os.getcwd()
     config = await RuntimeConfig.load()
-    await _run_pipe_mode(cwd, config)
+
+    if sys.stdout.isatty() and sys.stdin.isatty():
+        await _run_tty_mode(cwd, config)
+    else:
+        await _run_pipe_mode(cwd, config)
 
 
 if __name__ == "__main__":
