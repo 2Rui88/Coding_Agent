@@ -52,16 +52,25 @@ Coding_Agent 是一个 AI 终端编程助手，支持多模型适配、上下文
 - [x] `mcp/auth.py` — Bearer Token 管理
 - [x] `main.py` 集成 M3 全部模块
 
+### Python 迁移 — M4 终端 UI ✅
+
+- [x] `ui/protocol.py` — UserInterface 抽象协议
+- [x] `ui/pipe/app.py` — 管道模式（PipeUI）
+- [x] `ui/tty/app.py` — TTY 全屏交互主循环
+- [x] `ui/tty/render.py` — rich 渲染（header/status/permission）
+- [x] `ui/tty/transcript.py` — 对话转录管理 + 滚动
+- [x] `ui/tty/input_handler.py` — prompt_toolkit 输入 + 斜杠补全
+- [x] `commands/registry.py` — 装饰器注册表
+- [x] `commands/builtin/basic.py` — 7 个内置斜杠命令
+- [x] `main.py` 模式分发（TTY vs Pipe）
+
 ---
 
 ## 待完成
 
-### Python 迁移 — M4~M5
+### Python 迁移 — M5
 
 - [ ] `session/` — JSONL 会话持久化
-- [ ] `ui/tty/` — 终端全屏交互
-- [ ] `ui/pipe/` — 管道模式
-- [ ] `commands/` — 斜杠命令插件系统
 - [ ] 测试覆盖
 
 ---
@@ -118,8 +127,8 @@ Python 迁移中规划的优化（区别于原型中的问题）：
 M1: 基础设施 + Agent Loop ──── 已完成 ✅
 M2: 上下文压缩 Pipeline ───── 已完成 ✅
 M3: MCP + Skill + 权限 ────── 已完成 ✅
-M4: 终端 UI ───────────────── 待开始
-M5: 会话持久化 ────────────── 待开始
+M4: 终端 UI + 命令系统 ────── 已完成 ✅
+M5: 会话持久化 + 测试 ─────── 待开始
 ```
 
 ---
