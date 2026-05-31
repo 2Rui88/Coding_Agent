@@ -1,4 +1,4 @@
-# mini-code
+# Coding-Agent
 
 AI 终端编程助手。在命令行中与 LLM 协作完成代码阅读、搜索、编辑、命令执行等开发任务，支持多模型适配、上下文压缩、MCP 协议扩展、权限沙箱与终端全屏交互。
 
@@ -221,6 +221,3 @@ pip install -e ".[dev]"
 ruff check .
 ```
 
-## 许可证
-
-MIT
